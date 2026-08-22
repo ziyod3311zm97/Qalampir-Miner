@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Qalampir Miner</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #12131C;
+            --card-bg: #1E202E;
+            --accent-color: #FF4500;
+            --text-color: #FFFFFF;
+            --gold-color: #FFD700;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Top Header Statistika */
+        .header {
+            padding: 15px;
+            background: var(--card-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2B2D42;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--gold-color);
+        }
+
+        /* Ekran Qismlari (Tabs) */
+        .tab-content {
+            flex: 1;
+            display: none;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 1. Miner Tab */
+        .clicker-container {
+            margin-top: auto;
+            margin-bottom: auto;
+            text-align: center;
+        }
+
+        .pepper-btn {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, #ff6b4a 0%, #ff4500 100%);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 80px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255, 69, 0, 0.5);
+            transition: transform 0.05s ease;
+            margin-bottom: 20px;
+        }
+
+        .pepper-btn:active {
+            transform: scale(0.95);
+        }
+
+        .energy-bar-container {
+            width: 100%;
+            height: 15px;
+            background: #2B2D42;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .energy-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+            transition: width 0.2s;
+        }
+
+        /* 2. Battle Pass Tab */
+        .pass-list {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .pass-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #2B2D42;
+        }
+
+        .pass-card.locked {
+            opacity: 0.5;
+        }
+
+        /* 3. Shop & Gacha Modal */
+        .shop-box {
+            width: 100%;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .action-btn {
+            background: var(--accent-color);
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* Bottom Nav (Pastki menyu) */
+        .bottom-nav {
+            height: 65px;
+            background: var(--card-bg);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 2px solid #2B2D42;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            color: #8E8E93;
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: var(--accent-color);
+        }
+
+        .nav-icon {
+            font-size: 22px;
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header: Balans va Stat -->
+    <div class="header">
+        <div class="stat-box">
+            <span>Balans</span>
+            <span class="stat-value" id="ui-balance">0</span>
+        </div>
+        <div class="stat-box">
+            <span>Level</span>
+            <span class="stat-value" id="ui-level">1</span>
+        </div>
+    </div>
+
+    <!-- TAB 1: MINER -->
+    <div id="tab-miner" class="tab-content active">
+        <div class="clicker-container">
+            <div class="pepper-btn" onclick="handleTap(event)">🌶️</div>
+            <div>⚡ Energiya: <span id="ui-energy">1000</span>/<span id="ui-max-energy">1000</span></div>
+            <div class="energy-bar-container">
+                <div class="energy-fill" id="ui-energy-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: BATTLE PASS -->
+    <div id="tab-pass" class="tab-content">
+        <h2 style="margin-bottom: 15px;">Mavsumiy Bosqichlar</h2>
+        <div class="pass-list" id="pass-container">
+            <!-- JS dynamic fill -->
+        </div>
+    </div>
+
+    <!-- TAB 3: SHOP (LOOTBOX) -->
+    <div id="tab-shop" class="tab-content">
+        <h2>Sehrli Do'kon</h2>
+        <div class="shop-box">
+            <h3>🌶️ Qalampir Qutisi (Lootbox)</h3>
+            <p>Ichidan nodir artefaktlar va boostlar chiqadi!</p>
+            <button class="action-btn" onclick="buyLootbox()">Ochish (5,000 Tanga)</button>
+        </div>
+    </div>
+
+    <!-- TAB 4: INVENTORY -->
+    <div id="tab-inventory" class="tab-content">
+        <h2>Sizning Artefaktlaringiz</h2>
+        <div id="inventory-list" style="width: 100%; margin-top: 15px;">
+            <p style="text-align: center; color: #8E8E93;">Hozircha artefaktlar yo'q</p>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('miner', this)">
+            <span class="nav-icon">⛏️</span>
+            <span>Miner</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('pass', this)">
+            <span class="nav-icon">🛡️</span>
+            <span>Pass</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('shop', this)">
+            <span class="nav-icon">🛒</span>
+            <span>Do'kon</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('inventory', this)">
+            <span class="nav-icon">🎒</span>
+            <span>Xalta</span>
+        </div>
+    </div>
+
+    <script>
+        // Telegram WebApp obyektini ulash
+        const tg = window.Telegram ? window.Telegram.WebApp : null;
+        if(tg) tg.expand();
+
+        let userData = {
+            user_id: tg?.initDataUnsafe?.user?.id || 123456,
+            username: tg?.initDataUnsafe?.user?.username || "Guest",
+            balance: 0,
+            energy: 1000,
+            max_energy: 1000,
+            level: 1
+        };
+
+        // Serverdan foydalanuvchi ma'lumotlarini yuklash (Sync)
+        async function syncData() {
+            try {
+                const res = await fetch('/api/sync', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ user_id: userData.user_id, username: userData.username })
+                });
+                const data = await res.json();
+                
+                userData.balance = data.balance;
+                userData.energy = data.energy;
+                userData.max_energy = data.max_energy;
+                userData.level = data.level;
+
+                if (data.passive_gained > 0) {
+                    alert(`Siz yo'qligingizda auto-miner ${data.passive_gained} tanga yig'di!`);
+                }
+
+                updateUI();
+            } catch(e) {
+                console.error("Sync xatolik:", e);
+            }
+        }
+
+        // Qalampir bosilganda
+        async function handleTap(e) {
+            if (userData.energy <= 0) return;
+
+            // Telegram Haptic Feedback (Vibratsiya)
+            if (tg && tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
+
+            userData.balance += 1;
+            userData.energy -= 1;
+            updateUI();
+
+            // Backendga yuborish
+            await fetch('/api/tap', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userData.user_id, taps: 1 })
+            });
+        }
+
+        // Lootbox sotib olish
+        async function buyLootbox() {
+            const res = await fetch('/api/open_lootbox', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userData.user_id })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                alert(`Tabriklaymiz! Siz [${data.item.rarity}] ${data.item.name} yutib oldingiz! Multiplier: x${data.item.boost_multiplier}`);
+                syncData();
+            } else {
+                alert(data.reason);
+            }
+        }
+
+        // UI holatini yangilash
+        function updateUI() {
+            document.getElementById('ui-balance').innerText = Math.floor(userData.balance).toLocaleString();
+            document.getElementById('ui-level').innerText = userData.level;
+            document.getElementById('ui-energy').innerText = userData.energy;
+            document.getElementById('ui-max-energy').innerText = userData.max_energy;
+
+            const energyPercent = (userData.energy / userData.max_energy) * 100;
+            document.getElementById('ui-energy-fill').style.width = `${energyPercent}%`;
+        }
+
+        // Navigatsiya menyusi
+        function switchTab(tabName, element) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            element.classList.add('active');
+        }
+
+        // Boshlang'ich yuklash
+        syncData();
+    </script>
+</body>
+</html>
