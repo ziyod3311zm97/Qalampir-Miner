@@ -3,98 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Crypto Mining Mini App</title>
+    <title>Qalampir Cyber Miner</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --bg-color: #090d16;
+            --card-bg: rgba(22, 30, 46, 0.7);
+            --primary: #ff3b30;
+            --primary-glow: rgba(255, 59, 48, 0.4);
+            --accent: #00e676;
+            --text-muted: #8e9baa;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #0f172a;
-            color: #ffffff;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: radial-gradient(circle at top, #1a233a 0%, var(--bg-color) 80%);
+            color: #ffffff;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
         }
-        .card {
-            background: #1e293b;
-            border-radius: 20px;
-            padding: 20px;
-            width: 90%;
-            max-width: 350px;
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            margin-bottom: 15px;
-        }
-        .balance {
-            font-size: 32px;
-            font-weight: bold;
-            color: #f59e0b;
-            margin: 10px 0;
-        }
-        .mining-rig {
-            font-size: 70px;
-            margin: 15px 0;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.08); }
-            100% { transform: scale(1); }
-        }
-        .btn {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 14px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 12px;
-            width: 100%;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-top: 10px;
-        }
-        .btn-claim {
-            background: #10b981;
-            box-shadow: 0 4px 15px rgba(16,185,129,0.4);
-        }
-        .btn-upgrade {
-            background: #8b5cf6;
-            box-shadow: 0 4px 15px rgba(139,92,246,0.4);
-        }
-        .stats {
+
+        /* Top Bar */
+        .top-bar {
             display: flex;
             justify-content: space-between;
-            font-size: 14px;
-            color: #94a3b8;
-            margin-top: 10px;
+            align-items: center;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            padding: 12px 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 15px;
         }
+
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .avatar {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, #ff5252, #ff793f);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 18px;
+        }
+
+        .level-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 10px; border-radius: 20px;
+            font-size: 12px; color: #ffb142; border: 1px solid rgba(255, 177, 66, 0.3);
+        }
+
+        /* Navigation Tabs */
+        .tabs {
+            display: flex; gap: 10px; margin-bottom: 15px;
+        }
+        .tab-btn {
+            flex: 1; padding: 12px; border: none;
+            background: var(--card-bg); color: var(--text-muted);
+            border-radius: 12px; font-weight: 600; cursor: pointer;
+            transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary), #ff5252);
+            color: white; box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        /* Views */
+        .view-content { display: none; }
+        .view-content.active { display: block; }
+
+        /* Main Balance & Mining Container */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .balance-title { font-size: 13px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
+        .main-balance { font-size: 38px; font-weight: 800; color: #fff; margin: 8px 0; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
+
+        /* Mining Core Animatsiyasi */
+        .core-wrapper {
+            position: relative;
+            width: 140px; height: 140px;
+            margin: 20px auto;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .core-ring {
+            position: absolute; width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 3px dashed var(--primary);
+            animation: spin 12s linear infinite;
+        }
+        .core-icon {
+            font-size: 65px;
+            filter: drop-shadow(0 0 15px var(--primary));
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+        .mined-counter { font-size: 26px; font-weight: 700; color: var(--accent); margin: 10px 0; }
+
+        /* Buttons */
+        .action-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 16px;
+            font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-claim {
+            background: linear-gradient(135deg, #00b894, #00e676);
+            color: #000; box-shadow: 0 6px 20px rgba(0, 230, 118, 0.3);
+        }
+        .btn-claim:active { transform: scale(0.98); }
+
+        .btn-upgrade {
+            background: linear-gradient(135deg, #0984e3, #74b9ff);
+            color: white; margin-top: 10px;
+            box-shadow: 0 6px 20px rgba(9, 132, 227, 0.3);
+        }
+
+        /* Leaderboard Items */
+        .leader-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; background: rgba(255,255,255,0.03);
+            border-radius: 14px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .rank { font-weight: 800; font-size: 16px; width: 25px; color: var(--primary); }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <div>ASOSIY BALANS</div>
-        <div class="balance" id="mainBalance">0.00 🪙</div>
-        
-        <div class="mining-rig">⛏️</div>
-
-        <div style="color: #cbd5e1; font-size: 14px;">Yig'ilayotgan tanga:</div>
-        <div style="font-size: 24px; color: #10b981; font-weight: bold;" id="unclaimed">0.0000</div>
-
-        <button class="btn btn-claim" onclick="claimCoins()">💰 Claim (Balansga O'tkazish)</button>
+    <!-- Top Profile Bar -->
+    <div class="top-bar">
+        <div class="user-info">
+            <div class="avatar" id="userAvatar">M</div>
+            <div>
+                <div style="font-weight: 700; font-size: 15px;" id="userName">Miner</div>
+                <div style="font-size: 12px; color: var(--text-muted);" id="onlineUsers">Jami: 1 miner</div>
+            </div>
+        </div>
+        <div class="level-badge" id="userLevel">LVL 1</div>
     </div>
 
-    <div class="card">
-        <h3>🚀 Rig Upgradelar</h3>
-        <div class="stats">
-            <span>Mining Tezligi:</span>
-            <span id="miningRate" style="color:#fff;">0.1 /sec</span>
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('minerTab', this)"><i class="fa-solid fa-pickaxe"></i> Mining</button>
+        <button class="tab-btn" onclick="switchTab('leaderTab', this)"><i class="fa-solid fa-trophy"></i> Top 10</button>
+    </div>
+
+    <!-- TAB 1: MINING INTERFACE -->
+    <div id="minerTab" class="view-content active">
+        <div class="card">
+            <div class="balance-title">Asosiy Balans</div>
+            <div class="main-balance" id="mainBalance">0.00 🪙</div>
+            
+            <div class="core-wrapper">
+                <div class="core-ring"></div>
+                <div class="core-icon">🌶️</div>
+            </div>
+
+            <div class="balance-title">Yig'ilayotgan Tanga</div>
+            <div class="mined-counter" id="unclaimedCoins">0.0000</div>
+
+            <button class="action-btn btn-claim" onclick="claimCoins()">
+                <i class="fa-solid fa-bolt"></i> BALANSGA O'TKAZISH (CLAIM)
+            </button>
         </div>
-        <button class="btn btn-upgrade" id="upgradeBtn" onclick="upgradeSpeed()">
-            Tezlikni Oshirish (Narxi: <span id="upgradeCost">50</span> 🪙)
-        </button>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: var(--text-muted);">
+                <span>Tezlik (CPS):</span>
+                <span id="miningRate" style="color:#fff; font-weight:bold;">0.10 /s</span>
+            </div>
+            <button class="action-btn btn-upgrade" id="upgradeBtn" onclick="upgradeSpeed()">
+                <i class="fa-solid fa-rocket"></i> Upgradenik (Narxi: <span id="upgradeCost">50</span> 🪙)
+            </button>
+        </div>
+    </div>
+
+    <!-- TAB 2: LEADERBOARD -->
+    <div id="leaderTab" class="view-content">
+        <div class="card">
+            <h3 style="margin-top:0;"><i class="fa-solid fa-crown" style="color: #ffb142;"></i> Top Konchilar</h3>
+            <div id="leaderboardList">
+                <div style="color: var(--text-muted);">Yuklanmoqda...</div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -103,75 +212,111 @@
 
         const userData = tg.initDataUnsafe && tg.initDataUnsafe.user 
             ? tg.initDataUnsafe.user 
-            : { id: 99999, first_name: "TestUser" };
+            : { id: 77777, first_name: "DemoMiner" };
 
-        let balance = 0;
-        let unclaimed = 0;
-        let rate = 0.1;
-        let upgradeCost = 50;
+        document.getElementById('userName').innerText = userData.first_name;
+        document.getElementById('userAvatar').innerText = userData.first_name.charAt(0).toUpperCase();
 
-        // Backenddan ma'lumotlarni olish
-        async function fetchUser() {
-            const res = await fetch('/api/user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userData.id, name: userData.first_name })
-            });
-            const data = await res.json();
-            if (data.success) {
-                balance = data.user.balance;
-                unclaimed = data.user.unclaimedCoins || 0;
-                rate = data.user.miningRate;
-                upgradeCost = data.user.upgradeCost;
-                updateUI();
-            }
+        let balance = 0, unclaimed = 0, rate = 0.1, upgradeCost = 50, level = 1;
+
+        async function initData() {
+            try {
+                const res = await fetch('/api/user', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ user_id: userData.id, name: userData.first_name })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    balance = data.user.balance;
+                    unclaimed = data.user.unclaimedCoins || 0;
+                    rate = data.user.miningRate;
+                    upgradeCost = data.user.upgradeCost;
+                    level = data.user.level || 1;
+                    document.getElementById('onlineUsers').innerText = `Jami: ${data.totalUsers} miner`;
+                    updateUI();
+                }
+            } catch(e) { console.error(e); }
         }
 
-        // Live Mining Timeri (Har sekundda ekranda ko'payadi)
         setInterval(() => {
             unclaimed += rate / 10;
-            document.getElementById('unclaimed').innerText = unclaimed.toFixed(4) + " 🪙";
+            document.getElementById('unclaimedCoins').innerText = unclaimed.toFixed(4);
         }, 100);
 
         function updateUI() {
             document.getElementById('mainBalance').innerText = balance.toFixed(2) + " 🪙";
-            document.getElementById('unclaimed').innerText = unclaimed.toFixed(4) + " 🪙";
-            document.getElementById('miningRate').innerText = rate.toFixed(1) + " /sec";
+            document.getElementById('unclaimedCoins').innerText = unclaimed.toFixed(4);
+            document.getElementById('miningRate').innerText = rate.toFixed(2) + " /s";
             document.getElementById('upgradeCost').innerText = upgradeCost;
+            document.getElementById('userLevel').innerText = "LVL " + level;
         }
 
         async function claimCoins() {
             const res = await fetch('/api/claim', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ user_id: userData.id })
             });
             const data = await res.json();
-            if (data.success) {
+            if(data.success) {
                 balance = data.balance;
                 unclaimed = 0;
                 updateUI();
+                tg.HapticFeedback.notificationOccurred('success');
             }
         }
 
         async function upgradeSpeed() {
             const res = await fetch('/api/upgrade', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ user_id: userData.id })
             });
             const data = await res.json();
-            if (data.success) {
+            if(data.success) {
                 balance = data.balance;
                 rate = data.miningRate;
                 upgradeCost = data.upgradeCost;
+                level = data.level;
                 updateUI();
+                tg.HapticFeedback.impactOccurred('medium');
             } else {
-                alert(data.error);
+                tg.showAlert(data.error);
             }
         }
 
-        fetchUser();
+        async function loadLeaderboard() {
+            const res = await fetch('/api/leaderboard');
+            const data = await res.json();
+            if(data.success) {
+                const list = document.getElementById('leaderboardList');
+                list.innerHTML = '';
+                data.leaderboard.forEach((u, i) => {
+                    list.innerHTML += `
+                        <div class="leader-item">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="rank">#${i+1}</div>
+                                <div style="font-weight:600;">${u.name} <span style="font-size:11px; color:var(--text-muted);">(Lvl ${u.level})</span></div>
+                            </div>
+                            <div style="font-weight:700; color:#ffb142;">${u.balance.toFixed(1)} 🪙</div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+
+            if(tabId === 'leaderTab') loadLeaderboard();
+        }
+
+        initData();
     </script>
 </body>
 </html>
