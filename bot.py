@@ -2,7 +2,6 @@ import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-# Telegram Bot Token va Render sayt havolasi
 TOKEN = "8995342958:AAEYriJLB4BvroCOF7qLBsptPqFeyT8dWDg"
 WEB_APP_URL = "https://qalampir-miner-huy8.onrender.com"
 
@@ -12,7 +11,6 @@ logging.basicConfig(level=logging.INFO)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.effective_user.first_name
 
-    # Mini App va Kanal tugmalari
     keyboard = [
         [
             InlineKeyboardButton(
