@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Crypto Mining Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #0f172a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 20px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            margin-bottom: 15px;
+        }
+        .balance {
+            font-size: 32px;
+            font-weight: bold;
+            color: #f59e0b;
+            margin: 10px 0;
+        }
+        .mining-rig {
+            font-size: 70px;
+            margin: 15px 0;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+        .btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 12px;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 10px;
+        }
+        .btn-claim {
+            background: #10b981;
+            box-shadow: 0 4px 15px rgba(16,185,129,0.4);
+        }
+        .btn-upgrade {
+            background: #8b5cf6;
+            box-shadow: 0 4px 15px rgba(139,92,246,0.4);
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #94a3b8;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div>ASOSIY BALANS</div>
+        <div class="balance" id="mainBalance">0.00 🪙</div>
+        
+        <div class="mining-rig">⛏️</div>
+
+        <div style="color: #cbd5e1; font-size: 14px;">Yig'ilayotgan tanga:</div>
+        <div style="font-size: 24px; color: #10b981; font-weight: bold;" id="unclaimed">0.0000</div>
+
+        <button class="btn btn-claim" onclick="claimCoins()">💰 Claim (Balansga O'tkazish)</button>
+    </div>
+
+    <div class="card">
+        <h3>🚀 Rig Upgradelar</h3>
+        <div class="stats">
+            <span>Mining Tezligi:</span>
+            <span id="miningRate" style="color:#fff;">0.1 /sec</span>
+        </div>
+        <button class="btn btn-upgrade" id="upgradeBtn" onclick="upgradeSpeed()">
+            Tezlikni Oshirish (Narxi: <span id="upgradeCost">50</span> 🪙)
+        </button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const userData = tg.initDataUnsafe && tg.initDataUnsafe.user 
+            ? tg.initDataUnsafe.user 
+            : { id: 99999, first_name: "TestUser" };
+
+        let balance = 0;
+        let unclaimed = 0;
+        let rate = 0.1;
+        let upgradeCost = 50;
+
+        // Backenddan ma'lumotlarni olish
+        async function fetchUser() {
+            const res = await fetch('/api/user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userData.id, name: userData.first_name })
+            });
+            const data = await res.json();
+            if (data.success) {
+                balance = data.user.balance;
+                unclaimed = data.user.unclaimedCoins || 0;
+                rate = data.user.miningRate;
+                upgradeCost = data.user.upgradeCost;
+                updateUI();
+            }
+        }
+
+        // Live Mining Timeri (Har sekundda ekranda ko'payadi)
+        setInterval(() => {
+            unclaimed += rate / 10;
+            document.getElementById('unclaimed').innerText = unclaimed.toFixed(4) + " 🪙";
+        }, 100);
+
+        function updateUI() {
+            document.getElementById('mainBalance').innerText = balance.toFixed(2) + " 🪙";
+            document.getElementById('unclaimed').innerText = unclaimed.toFixed(4) + " 🪙";
+            document.getElementById('miningRate').innerText = rate.toFixed(1) + " /sec";
+            document.getElementById('upgradeCost').innerText = upgradeCost;
+        }
+
+        async function claimCoins() {
+            const res = await fetch('/api/claim', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userData.id })
+            });
+            const data = await res.json();
+            if (data.success) {
+                balance = data.balance;
+                unclaimed = 0;
+                updateUI();
+            }
+        }
+
+        async function upgradeSpeed() {
+            const res = await fetch('/api/upgrade', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userData.id })
+            });
+            const data = await res.json();
+            if (data.success) {
+                balance = data.balance;
+                rate = data.miningRate;
+                upgradeCost = data.upgradeCost;
+                updateUI();
+            } else {
+                alert(data.error);
+            }
+        }
+
+        fetchUser();
+    </script>
+</body>
+</html>
