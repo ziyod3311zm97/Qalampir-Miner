@@ -3,392 +3,423 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Qalampir Miner</title>
+    <title>Qalampir Miner Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #12131C;
-            --card-bg: #1E202E;
-            --accent-color: #FF4500;
-            --text-color: #FFFFFF;
-            --gold-color: #FFD700;
+            --bg-color: #0b0e14;
+            --card-bg: rgba(22, 28, 38, 0.7);
+            --primary-orange: #ff5e00;
+            --neon-glow: #ff3300;
+            --accent-green: #00ff88;
+            --text-main: #ffffff;
+            --text-dim: #8e9aaf;
         }
 
         * {
             box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
             margin: 0;
             padding: 0;
-            user-select: none;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            background: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            justify-content: space-between;
             overflow: hidden;
+            background: radial-gradient(circle at top, #1f0b08 0%, #0b0e14 70%);
         }
 
+        /* Header Info */
         .header {
-            padding: 15px;
-            background: var(--card-bg);
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid #2B2D42;
         }
 
-        .stat-box {
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 16px;
             display: flex;
-            flex-direction: column;
             align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
-        .stat-value {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--gold-color);
+        .stat-val {
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #fff;
         }
 
-        .tab-content {
-            flex: 1;
-            display: none;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .tab-content.active {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .clicker-container {
-            margin-top: auto;
-            margin-bottom: auto;
+        /* Balance Display */
+        .score-container {
             text-align: center;
+            margin-top: 10px;
+        }
+
+        .score-title {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .score-val {
+            font-size: 2.8rem;
+            font-weight: 900;
+            background: linear-gradient(180deg, #ffffff 0%, #ffaa00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 25px rgba(255, 94, 0, 0.4);
+        }
+
+        /* Main Clicker Area */
+        .clicker-area {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .pepper-glow {
+            position: absolute;
+            width: 230px;
+            height: 230px;
+            background: radial-gradient(circle, var(--neon-glow) 0%, transparent 70%);
+            filter: blur(30px);
+            opacity: 0.5;
+            animation: pulse 2s infinite alternate;
         }
 
         .pepper-btn {
-            width: 200px;
-            height: 200px;
-            background: radial-gradient(circle, #ff6b4a 0%, #ff4500 100%);
+            position: relative;
+            width: 220px;
+            height: 220px;
+            background: radial-gradient(circle, #ff3b00 0%, #800d00 100%);
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 80px;
             cursor: pointer;
-            box-shadow: 0 10px 30px rgba(255, 69, 0, 0.5);
+            box-shadow: 0 10px 40px rgba(255, 60, 0, 0.5), inset 0 2px 10px rgba(255,255,255,0.4);
             transition: transform 0.05s ease;
-            margin-bottom: 20px;
+            outline: none;
         }
 
         .pepper-btn:active {
-            transform: scale(0.95);
+            transform: scale(0.92);
         }
 
-        .energy-bar-container {
+        .pepper-icon {
+            font-size: 110px;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+        }
+
+        /* Floating +1 Text */
+        .floating-num {
+            position: absolute;
+            font-size: 2rem;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 0 10px var(--primary-orange);
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 100;
+        }
+
+        /* Energy & Progress Bar */
+        .energy-wrapper {
+            padding: 0 25px 15px 25px;
+        }
+
+        .energy-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .progress-bar-bg {
             width: 100%;
-            height: 15px;
-            background: #2B2D42;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.08);
             border-radius: 10px;
             overflow: hidden;
-            margin-top: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .energy-fill {
+        .progress-bar-fill {
             height: 100%;
             width: 100%;
-            background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
-            transition: width 0.2s;
+            background: linear-gradient(90deg, #ff3300, #ff8800, var(--accent-green));
+            border-radius: 10px;
+            transition: width 0.2s ease;
         }
 
-        .pass-list {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        /* Tab Content Pages */
+        .page {
+            display: none;
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
         }
 
-        .pass-card {
+        .page.active {
+            display: block;
+        }
+
+        .card {
             background: var(--card-bg);
+            border-radius: 16px;
             padding: 15px;
-            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 1px solid #2B2D42;
         }
 
-        .pass-card.locked {
-            opacity: 0.5;
-        }
-
-        .shop-box {
-            width: 100%;
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        .action-btn {
-            background: var(--accent-color);
-            color: #fff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .bottom-nav {
-            height: 65px;
-            background: var(--card-bg);
+        /* Bottom Navigation */
+        .navbar {
+            background: rgba(15, 20, 28, 0.95);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             justify-content: space-around;
-            align-items: center;
-            border-top: 2px solid #2B2D42;
+            padding: 12px 0 20px 0;
         }
 
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-size: 12px;
-            color: #8E8E93;
+            gap: 4px;
+            color: var(--text-dim);
+            font-size: 0.75rem;
             cursor: pointer;
+            transition: color 0.2s;
+            width: 25%;
+        }
+
+        .nav-item i {
+            font-size: 1.3rem;
         }
 
         .nav-item.active {
-            color: var(--accent-color);
+            color: var(--primary-orange);
         }
 
-        .nav-icon {
-            font-size: 22px;
-            margin-bottom: 2px;
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.4; }
+            100% { transform: scale(1.15); opacity: 0.7; }
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
         }
     </style>
 </head>
 <body>
 
+    <!-- Header Stats -->
     <div class="header">
-        <div class="stat-box">
-            <span>Balans</span>
-            <span class="stat-value" id="ui-balance">0</span>
+        <div class="stat-card">
+            <i class="fa-solid fa-fire" style="color: var(--primary-orange);"></i>
+            <div>
+                <div style="font-size: 0.7rem; color: var(--text-dim);">Kuch</div>
+                <div class="stat-val" id="clickPower">+1</div>
+            </div>
         </div>
-        <div class="stat-box">
-            <span>Level</span>
-            <span class="stat-value" id="ui-level">1</span>
-        </div>
-    </div>
-
-    <!-- MINER TAB -->
-    <div id="tab-miner" class="tab-content active">
-        <div class="clicker-container">
-            <div class="pepper-btn" onclick="handleTap(event)">🌶️</div>
-            <div>⚡ Energiya: <span id="ui-energy">1000</span>/<span id="ui-max-energy">1000</span></div>
-            <div class="energy-bar-container">
-                <div class="energy-fill" id="ui-energy-fill"></div>
+        <div class="stat-card">
+            <i class="fa-solid fa-trophy" style="color: #ffcc00;"></i>
+            <div>
+                <div style="font-size: 0.7rem; color: var(--text-dim);">Liga</div>
+                <div class="stat-val">Bronza</div>
             </div>
         </div>
     </div>
 
-    <!-- BATTLE PASS TAB -->
-    <div id="tab-pass" class="tab-content">
-        <h2 style="margin-bottom: 15px;">Mavsumiy Bosqichlar</h2>
-        <div class="pass-list" id="pass-container"></div>
-    </div>
+    <!-- TAB 1: MINER MAIN PAGE -->
+    <div id="page-miner" class="page active">
+        <div class="score-container">
+            <div class="score-title">BALANS</div>
+            <div class="score-val" id="balance">0</div>
+        </div>
 
-    <!-- SHOP TAB -->
-    <div id="tab-shop" class="tab-content">
-        <h2>Sehrli Do'kon</h2>
-        <div class="shop-box">
-            <h3>🌶️ Qalampir Qutisi (Lootbox)</h3>
-            <p>Ichidan nodir artefaktlar va boostlar chiqadi!</p>
-            <button class="action-btn" onclick="buyLootbox()">Ochish (5,000 Tanga)</button>
+        <div class="clicker-area">
+            <div class="pepper-glow"></div>
+            <div class="pepper-btn" id="clickBtn">
+                <span class="pepper-icon">🌶️</span>
+            </div>
+        </div>
+
+        <div class="energy-wrapper">
+            <div class="energy-info">
+                <span><i class="fa-solid fa-bolt" style="color: #ffaa00;"></i> Energiya</span>
+                <span id="energyText">1000/1000</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="energyFill"></div>
+            </div>
         </div>
     </div>
 
-    <!-- INVENTORY TAB -->
-    <div id="tab-inventory" class="tab-content">
-        <h2>Sizning Artefaktlaringiz</h2>
-        <div id="inventory-list" style="width: 100%; margin-top: 15px;"></div>
+    <!-- TAB 2: PASS (Tasks & Quests) -->
+    <div id="page-pass" class="page">
+        <h2 style="margin-bottom: 15px;">Mavsumiy Vazifalar</h2>
+        <div class="card">
+            <div>
+                <div style="font-weight: bold;">Telegram Kanalga a'zo bo'lish</div>
+                <div style="color: var(--accent-green); font-size: 0.85rem;">+5,000 Balans</div>
+            </div>
+            <button style="padding: 8px 15px; border-radius: 10px; border:none; background: var(--primary-orange); color:#fff; font-weight:bold;">Bajarish</button>
+        </div>
     </div>
 
-    <!-- BOTTOM NAV -->
-    <div class="bottom-nav">
+    <!-- TAB 3: DO'KON (Boosters) -->
+    <div id="page-shop" class="page">
+        <h2 style="margin-bottom: 15px;">Boosterlar va Kuchaytirish</h2>
+        <div class="card">
+            <div>
+                <div style="font-weight: bold;">Multitap (+1 Bosish)</div>
+                <div style="color: #ffaa00; font-size: 0.85rem;">Narxi: 1,000 Balans</div>
+            </div>
+            <button style="padding: 8px 15px; border-radius: 10px; border:none; background: var(--accent-green); color:#000; font-weight:bold;">Sotib olish</button>
+        </div>
+    </div>
+
+    <!-- TAB 4: XALTA (Inventory) -->
+    <div id="page-bag" class="page">
+        <h2 style="margin-bottom: 15px;">Sizning Inventaringiz</h2>
+        <p style="color: var(--text-dim);">Hozircha inventaringiz bo'sh.</p>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="navbar">
         <div class="nav-item active" onclick="switchTab('miner', this)">
-            <span class="nav-icon">⛏️</span>
+            <i class="fa-solid fa-pickaxe"></i>
             <span>Miner</span>
         </div>
         <div class="nav-item" onclick="switchTab('pass', this)">
-            <span class="nav-icon">🛡️</span>
+            <i class="fa-solid fa-shield-halved"></i>
             <span>Pass</span>
         </div>
         <div class="nav-item" onclick="switchTab('shop', this)">
-            <span class="nav-icon">🛒</span>
+            <i class="fa-solid fa-store"></i>
             <span>Do'kon</span>
         </div>
-        <div class="nav-item" onclick="switchTab('inventory', this)">
-            <span class="nav-icon">🎒</span>
+        <div class="nav-item" onclick="switchTab('bag', this)">
+            <i class="fa-solid fa-bag-shopping"></i>
             <span>Xalta</span>
         </div>
     </div>
 
     <script>
-        const tg = window.Telegram ? window.Telegram.WebApp : null;
-        if(tg) tg.expand();
+        const tg = window.Telegram.WebApp;
+        tg.expand();
 
-        let userData = {
-            user_id: tg?.initDataUnsafe?.user?.id || 123456,
-            username: tg?.initDataUnsafe?.user?.username || "Guest",
-            balance: 0,
-            energy: 1000,
-            max_energy: 1000,
-            level: 1
-        };
+        let userId = tg.initDataUnsafe?.user?.id || 123456;
+        let username = tg.initDataUnsafe?.user?.first_name || "Player";
 
-        async function syncData() {
-            try {
-                const res = await fetch('/api/sync', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ user_id: userData.user_id, username: userData.username })
-                });
-                const data = await res.json();
-                
-                userData.balance = data.balance;
-                userData.energy = data.energy;
-                userData.max_energy = data.max_energy;
-                userData.level = data.level;
+        let balance = 0;
+        let energy = 1000;
+        let maxEnergy = 1000;
+        let clickPower = 1;
+        let unsyncedClicks = 0;
 
-                if (data.passive_gained > 0) {
-                    alert(`Siz yo'qligingizda auto-miner ${data.passive_gained} tanga yig'di!`);
-                }
-
-                updateUI();
-            } catch(e) {
-                console.error("Sync xatolik:", e);
-            }
-        }
-
-        async function handleTap(e) {
-            if (userData.energy <= 0) return;
-
-            if (tg && tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('light');
-            }
-
-            userData.balance += 1;
-            userData.energy -= 1;
+        // API Init
+        fetch('/api/init', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({user_id: userId, username: username})
+        })
+        .then(res => res.json())
+        .then(data => {
+            balance = data.balance;
+            energy = data.energy;
+            maxEnergy = data.max_energy;
+            clickPower = data.click_power;
             updateUI();
+        });
 
-            await fetch('/api/tap', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: userData.user_id, taps: 1 })
-            });
-        }
+        const clickBtn = document.getElementById('clickBtn');
 
-        async function buyLootbox() {
-            const res = await fetch('/api/open_lootbox', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: userData.user_id })
-            });
-            const data = await res.json();
-            
-            if (data.success) {
-                if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-                alert(`Tabriklaymiz! Siz [${data.item.rarity}] ${data.item.name} yutib oldingiz! Multiplier: x${data.item.boost_multiplier}`);
-                syncData();
-            } else {
-                alert(data.reason);
+        clickBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            for(let i=0; i<e.touches.length; i++) {
+                handleTap(e.touches[i].clientX, e.touches[i].clientY);
+            }
+        });
+
+        clickBtn.addEventListener('click', (e) => {
+            handleTap(e.clientX, e.clientY);
+        });
+
+        function handleTap(x, y) {
+            if (energy >= clickPower) {
+                balance += clickPower;
+                energy -= clickPower;
+                unsyncedClicks += 1;
+
+                showFloatingNum(x, y, `+${clickPower}`);
+                updateUI();
             }
         }
 
-        async function loadPassData() {
-            const res = await fetch('/api/pass_info', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: userData.user_id })
-            });
-            const data = await res.json();
-            const container = document.getElementById('pass-container');
-            container.innerHTML = '';
-            
-            data.passes.forEach(p => {
-                const isClaimed = data.claimed.includes(p.level_required);
-                const isUnlocked = userData.level >= p.level_required;
-                container.innerHTML += `
-                    <div class="pass-card ${isUnlocked ? '' : 'locked'}">
-                        <div>
-                            <strong>Level ${p.level_required}</strong>: ${p.description}
-                        </div>
-                        <div>
-                            ${isClaimed ? '✅ Olindi' : (isUnlocked ? '🎁 Ochiq' : '🔒 Qulf')}
-                        </div>
-                    </div>
-                `;
-            });
-        }
+        function showFloatingNum(x, y, text) {
+            const el = document.createElement('div');
+            el.className = 'floating-num';
+            el.innerText = text;
+            el.style.left = `${x - 20}px`;
+            el.style.top = `${y - 40}px`;
+            document.body.appendChild(el);
 
-        async function loadInventory() {
-            const res = await fetch('/api/user_inventory', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: userData.user_id })
-            });
-            const data = await res.json();
-            const container = document.getElementById('inventory-list');
-            
-            if (data.items.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #8E8E93;">Hozircha artefaktlar yo\'q</p>';
-                return;
-            }
-            
-            container.innerHTML = '';
-            data.items.forEach(item => {
-                container.innerHTML += `
-                    <div class="pass-card">
-                        <div>
-                            <strong>${item.item_name}</strong> (${item.rarity})
-                        </div>
-                        <div style="color: var(--gold-color);">x${item.boost_multiplier} Boost</div>
-                    </div>
-                `;
-            });
+            setTimeout(() => el.remove(), 800);
         }
 
         function updateUI() {
-            document.getElementById('ui-balance').innerText = Math.floor(userData.balance).toLocaleString();
-            document.getElementById('ui-level').innerText = userData.level;
-            document.getElementById('ui-energy').innerText = userData.energy;
-            document.getElementById('ui-max-energy').innerText = userData.max_energy;
-
-            const energyPercent = (userData.energy / userData.max_energy) * 100;
-            document.getElementById('ui-energy-fill').style.width = `${energyPercent}%`;
+            document.getElementById('balance').innerText = balance.toLocaleString();
+            document.getElementById('energyText').innerText = `${energy}/${maxEnergy}`;
+            document.getElementById('energyFill').style.width = `${(energy / maxEnergy) * 100}%`;
+            document.getElementById('clickPower').innerText = `+${clickPower}`;
         }
 
-        function switchTab(tabName, element) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        // Har 2 sekundda backend bilan sinxronizatsiya
+        setInterval(() => {
+            if (unsyncedClicks > 0) {
+                fetch('/api/sync', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId, clicks: unsyncedClicks})
+                });
+                unsyncedClicks = 0;
+            }
+        }, 2000);
 
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-            element.classList.add('active');
-
-            if(tabName === 'pass') loadPassData();
-            if(tabName === 'inventory') loadInventory();
+        // Tablarni almashtirish
+        function switchTab(tabName, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(`page-${tabName}`).classList.add('active');
+            el.classList.add('active');
         }
-
-        syncData();
     </script>
 </body>
 </html>
