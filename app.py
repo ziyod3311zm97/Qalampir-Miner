@@ -1,99 +1,110 @@
 import os
 import sqlite3
+import time
 from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
-# Ma'lumotlar bazasi yo'lini aniqlash
 DB_PATH = os.path.join(os.path.dirname(__file__), 'database.db')
 
-def get_db_connection():
+def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-# Ma'lumotlar bazasini va jadvallarni yaratish
 def init_db():
-    conn = get_db_connection()
+    conn = get_db()
     cursor = conn.cursor()
     
-    # Season pass jadvali
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS season_pass (
-            id INTEGER PRIMARY KEY,
-            points INTEGER,
-            reward_name TEXT
-        )
-    ''')
-    
-    # Foydalanuvchilar (Users) jadvali
+    # Users jadvali
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY,
             username TEXT,
             balance INTEGER DEFAULT 0,
-            energy INTEGER DEFAULT 1000
+            energy INTEGER DEFAULT 1000,
+            max_energy INTEGER DEFAULT 1000,
+            click_power INTEGER DEFAULT 1,
+            recharge_rate INTEGER DEFAULT 1,
+            last_sync INTEGER
         )
     ''')
     
-    # Boshlang'ich ma'lumotni xavfsiz (parametrik) usulda kiritish
-    cursor.execute(
-        "INSERT OR IGNORE INTO season_pass (id, points, reward_name) VALUES (?, ?, ?)",
-        (1, 1000, "Boshlang'ich Mukofot")
-    )
+    # Season Pass va Vazifalar
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            reward INTEGER,
+            link TEXT
+        )
+    ''')
     
     conn.commit()
     conn.close()
 
-# Server ishga tushishi bilan bazani tayyorlash
 init_db()
 
-# Bosh sahifa
 @app.route('/')
 def home():
-    return render_template('index.html') if os.path.exists('templates/index.html') else "Qalampir Miner Serveri Ishlamoqda!"
+    return render_template('index.html')
 
-# Foydalanuvchi ma'lumotlarini olish (API)
-@app.route('/api/user/<int:user_id>', methods=['GET'])
-def get_user(user_id):
-    conn = get_db_connection()
-    user = conn.execute('SELECT * FROM users WHERE user_id = ?', (user_id,)).fetchone()
-    
-    if user is None:
-        # Yangi foydalanuvchini ro'yxatdan o'tkazish
-        conn.execute('INSERT INTO users (user_id, balance, energy) VALUES (?, ?, ?)', (user_id, 0, 1000))
+@app.route('/api/init', methods=['POST'])
+def init_user():
+    data = request.get_json() or {}
+    user_id = data.get('user_id', 123456)
+    username = data.get('username', 'Player')
+    now = int(time.time())
+
+    conn = get_db()
+    cursor = conn.cursor()
+    user = cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,)).fetchone()
+
+    if not user:
+        cursor.execute('''
+            INSERT INTO users (user_id, username, balance, energy, max_energy, click_power, recharge_rate, last_sync)
+            VALUES (?, ?, 0, 1000, 1000, 1, 1, ?)
+        ''', (user_id, username, now))
         conn.commit()
-        user = conn.execute('SELECT * FROM users WHERE user_id = ?', (user_id,)).fetchone()
-    
+        user = cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,)).fetchone()
+    else:
+        # Energiyani avtomatik tiklash hesobi
+        elapsed = now - user['last_sync']
+        recovered_energy = elapsed * user['recharge_rate']
+        new_energy = min(user['max_energy'], user['energy'] + recovered_energy)
+        cursor.execute('UPDATE users SET energy = ?, last_sync = ? WHERE user_id = ?', (new_energy, now, user_id))
+        conn.commit()
+        user = cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,)).fetchone()
+
     conn.close()
     return jsonify(dict(user))
 
-# Bosish / Miner (Click) harakatini saqlash (API)
-@app.route('/api/click', methods=['POST'])
-def click():
+@app.route('/api/sync', methods=['POST'])
+def sync_clicks():
     data = request.get_json() or {}
     user_id = data.get('user_id')
-    clicks = data.get('clicks', 1)
+    clicks = data.get('clicks', 0)
+    now = int(time.time())
 
-    if not user_id:
-        return jsonify({'error': 'user_id talab qilinadi'}), 400
+    conn = get_db()
+    cursor = conn.cursor()
+    user = cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,)).fetchone()
 
-    conn = get_db_connection()
-    user = conn.execute('SELECT * FROM users WHERE user_id = ?', (user_id,)).fetchone()
+    if user:
+        click_power = user['click_power']
+        gained_balance = clicks * click_power
+        new_balance = user['balance'] + gained_balance
+        new_energy = max(0, user['energy'] - clicks)
 
-    if not user:
+        cursor.execute('''
+            UPDATE users SET balance = ?, energy = ?, last_sync = ? WHERE user_id = ?
+        ''', (new_balance, new_energy, now, user_id))
+        conn.commit()
         conn.close()
-        return jsonify({'error': 'Foydalanuvchi topilmadi'}), 404
+        return jsonify({'balance': new_balance, 'energy': new_energy, 'status': 'ok'})
 
-    new_balance = user['balance'] + clicks
-    new_energy = max(0, user['energy'] - clicks)
-
-    conn.execute('UPDATE users SET balance = ?, energy = ? WHERE user_id = ?', 
-                 (new_balance, new_energy, user_id))
-    conn.commit()
     conn.close()
-
-    return jsonify({'balance': new_balance, 'energy': new_energy})
+    return jsonify({'error': 'User not found'}), 404
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
