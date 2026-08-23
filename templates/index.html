@@ -3,347 +3,293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Qalampir Miner Pro</title>
+    <title>Qalampir Network - Web3 App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0b0e14;
-            --card-bg: rgba(22, 28, 38, 0.7);
-            --primary-orange: #ff5e00;
-            --neon-glow: #ff3300;
-            --accent-green: #00ff88;
-            --text-main: #ffffff;
-            --text-dim: #8e9aaf;
+            --bg-grad: radial-gradient(circle at 50% 10%, #1a0803 0%, #080a0f 60%, #030406 100%);
+            --card-glass: rgba(255, 255, 255, 0.04);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --primary-orange: #ff4500;
+            --gold-glow: #ffb700;
+            --crypto-green: #00ff88;
+            --text-main: #f0f3f8;
+            --text-sub: #7a8b9e;
         }
 
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            margin: 0;
-            padding: 0;
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
 
         body {
-            background: var(--bg-color);
+            background: var(--bg-grad);
             color: var(--text-main);
             height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             overflow: hidden;
-            background: radial-gradient(circle at top, #1f0b08 0%, #0b0e14 70%);
         }
 
-        /* Header Info */
-        .header {
-            padding: 15px 20px;
+        /* Top Brand Header */
+        .brand-header {
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid var(--border-glass);
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
         }
 
-        .stat-card {
-            background: var(--card-bg);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(10px);
-            padding: 8px 16px;
-            border-radius: 16px;
+        .badge-verified {
             display: flex;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        .stat-val {
-            font-weight: 800;
-            font-size: 1.1rem;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 700;
             color: #fff;
         }
 
-        /* Balance Display */
-        .score-container {
-            text-align: center;
-            margin-top: 10px;
+        .badge-verified i { color: #0088cc; }
+
+        .live-online {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--crypto-green);
+            font-weight: 600;
         }
 
-        .score-title {
-            font-size: 0.85rem;
-            color: var(--text-dim);
+        .pulse-dot {
+            width: 6px; height: 6px;
+            background: var(--crypto-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--crypto-green);
+            animation: blink 1.2s infinite;
+        }
+
+        /* Pages */
+        .page { display: none; flex-grow: 1; flex-direction: column; justify-content: space-between; padding-bottom: 10px; }
+        .page.active { display: flex; }
+
+        /* Token Display */
+        .token-card { text-align: center; margin-top: 15px; }
+
+        .token-title {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            color: var(--text-sub);
             text-transform: uppercase;
-            letter-spacing: 1.5px;
         }
 
-        .score-val {
+        .token-balance {
             font-size: 2.8rem;
             font-weight: 900;
-            background: linear-gradient(180deg, #ffffff 0%, #ffaa00 100%);
+            background: linear-gradient(180deg, #ffffff 30%, #ff8800 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 25px rgba(255, 94, 0, 0.4);
+            text-shadow: 0 0 30px rgba(255, 69, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        /* Main Clicker Area */
-        .clicker-area {
-            position: relative;
+        /* Clicker Core */
+        .click-zone {
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
             flex-grow: 1;
         }
 
-        .pepper-glow {
+        .core-glow {
             position: absolute;
-            width: 230px;
-            height: 230px;
-            background: radial-gradient(circle, var(--neon-glow) 0%, transparent 70%);
-            filter: blur(30px);
-            opacity: 0.5;
-            animation: pulse 2s infinite alternate;
+            width: 240px; height: 240px;
+            background: radial-gradient(circle, var(--primary-orange) 0%, transparent 70%);
+            filter: blur(40px);
+            opacity: 0.4;
+            animation: floatGlow 3s ease-in-out infinite alternate;
         }
 
         .pepper-btn {
             position: relative;
-            width: 220px;
-            height: 220px;
-            background: radial-gradient(circle, #ff3b00 0%, #800d00 100%);
+            width: 210px; height: 210px;
+            background: radial-gradient(circle, #ff5500 0%, #7a0900 100%);
             border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex; justify-content: center; align-items: center;
             cursor: pointer;
-            box-shadow: 0 10px 40px rgba(255, 60, 0, 0.5), inset 0 2px 10px rgba(255,255,255,0.4);
+            box-shadow: 0 15px 50px rgba(255, 69, 0, 0.4), inset 0 2px 15px rgba(255,255,255,0.5);
             transition: transform 0.05s ease;
-            outline: none;
         }
 
-        .pepper-btn:active {
-            transform: scale(0.92);
-        }
+        .pepper-btn:active { transform: scale(0.93); }
+        .pepper-btn span { font-size: 105px; filter: drop-shadow(0 15px 20px rgba(0,0,0,0.6)); }
 
-        .pepper-icon {
-            font-size: 110px;
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
-        }
-
-        /* Floating +1 Text */
-        .floating-num {
+        /* Floating Token Animation */
+        .float-token {
             position: absolute;
-            font-size: 2rem;
             font-weight: 900;
-            color: #ffffff;
-            text-shadow: 0 0 10px var(--primary-orange);
+            font-size: 1.8rem;
+            color: #fff;
+            text-shadow: 0 0 12px var(--primary-orange);
             pointer-events: none;
-            animation: floatUp 0.8s ease-out forwards;
-            z-index: 100;
+            animation: rise 0.8s ease-out forwards;
+            z-index: 99;
         }
 
-        /* Energy & Progress Bar */
-        .energy-wrapper {
-            padding: 0 25px 15px 25px;
-        }
+        /* Energy Section */
+        .energy-box { padding: 0 20px 10px 20px; }
+        .energy-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-sub); margin-bottom: 6px; }
+        .bar-bg { width: 100%; height: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-glass); }
+        .bar-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff3300, #ff9900); transition: width 0.2s; }
 
-        .energy-info {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-            color: var(--text-dim);
-            font-weight: 600;
-        }
-
-        .progress-bar-bg {
-            width: 100%;
-            height: 12px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            width: 100%;
-            background: linear-gradient(90deg, #ff3300, #ff8800, var(--accent-green));
-            border-radius: 10px;
-            transition: width 0.2s ease;
-        }
-
-        /* Tab Content Pages */
-        .page {
-            display: none;
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        .card {
-            background: var(--card-bg);
+        /* Universal Cards */
+        .info-card {
+            background: var(--card-glass);
+            border: 1px solid var(--border-glass);
             border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 16px;
+            margin: 15px 20px 0 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        /* Bottom Navigation */
-        .navbar {
-            background: rgba(15, 20, 28, 0.95);
-            backdrop-filter: blur(15px);
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0 20px 0;
+        /* Navigation */
+        .nav-bar {
+            background: rgba(10, 12, 16, 0.95);
+            border-top: 1px solid var(--border-glass);
+            display: flex; justify-content: space-around;
+            padding: 12px 0 18px 0;
+            backdrop-filter: blur(20px);
         }
 
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            color: var(--text-dim);
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: color 0.2s;
-            width: 25%;
+        .nav-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            color: var(--text-sub); font-size: 0.7rem; cursor: pointer; transition: 0.2s; width: 25%;
         }
 
-        .nav-item i {
-            font-size: 1.3rem;
-        }
+        .nav-btn i { font-size: 1.2rem; }
+        .nav-btn.active { color: var(--primary-orange); }
 
-        .nav-item.active {
-            color: var(--primary-orange);
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.4; }
-            100% { transform: scale(1.15); opacity: 0.7; }
-        }
-
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
-        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes floatGlow { 0% { transform: scale(0.9); } 100% { transform: scale(1.1); } }
+        @keyframes rise { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-70px) scale(1.2); } }
     </style>
 </head>
 <body>
 
-    <!-- Header Stats -->
-    <div class="header">
-        <div class="stat-card">
-            <i class="fa-solid fa-fire" style="color: var(--primary-orange);"></i>
-            <div>
-                <div style="font-size: 0.7rem; color: var(--text-dim);">Kuch</div>
-                <div class="stat-val" id="clickPower">+1</div>
-            </div>
+    <!-- Header & Realtime Online Status -->
+    <div class="brand-header">
+        <div class="badge-verified">
+            <span>Qalampir Web3</span>
+            <i class="fa-solid fa-circle-check"></i>
         </div>
-        <div class="stat-card">
-            <i class="fa-solid fa-trophy" style="color: #ffcc00;"></i>
-            <div>
-                <div style="font-size: 0.7rem; color: var(--text-dim);">Liga</div>
-                <div class="stat-val">Bronza</div>
-            </div>
+        <div class="live-online">
+            <div class="pulse-dot"></div>
+            <span id="onlineCounter">1 LIVE</span>
         </div>
     </div>
 
-    <!-- TAB 1: MINER MAIN PAGE -->
-    <div id="page-miner" class="page active">
-        <div class="score-container">
-            <div class="score-title">BALANS</div>
-            <div class="score-val" id="balance">0</div>
-        </div>
-
-        <div class="clicker-area">
-            <div class="pepper-glow"></div>
-            <div class="pepper-btn" id="clickBtn">
-                <span class="pepper-icon">🌶️</span>
+    <!-- TAB 1: MINE PAGE -->
+    <div id="page-mine" class="page active">
+        <div class="token-card">
+            <div class="token-title">AIRDROP BALANCE</div>
+            <div class="token-balance">
+                <span id="balance">0.0000</span>
+                <span style="font-size: 1.2rem; color: var(--primary-orange); font-weight:700;">$QLP</span>
             </div>
         </div>
 
-        <div class="energy-wrapper">
-            <div class="energy-info">
-                <span><i class="fa-solid fa-bolt" style="color: #ffaa00;"></i> Energiya</span>
+        <div class="click-zone">
+            <div class="core-glow"></div>
+            <div class="pepper-btn" id="tapBtn">
+                <span>🌶️</span>
+            </div>
+        </div>
+
+        <div class="energy-box">
+            <div class="energy-meta">
+                <span><i class="fa-solid fa-bolt" style="color: var(--gold-glow);"></i> Energy</span>
                 <span id="energyText">1000/1000</span>
             </div>
-            <div class="progress-bar-bg">
-                <div class="progress-bar-fill" id="energyFill"></div>
+            <div class="bar-bg">
+                <div class="bar-fill" id="energyBar"></div>
             </div>
         </div>
     </div>
 
-    <!-- TAB 2: PASS (Tasks & Quests) -->
-    <div id="page-pass" class="page">
-        <h2 style="margin-bottom: 15px;">Mavsumiy Vazifalar</h2>
-        <div class="card">
+    <!-- TAB 2: FRIENDS PAGE -->
+    <div id="page-friends" class="page">
+        <div style="padding: 20px;">
+            <h2>Taklifnomalar</h2>
+            <p style="color: var(--text-sub); font-size: 0.9rem; margin-top: 5px;">Do'stlaringizni taklif qiling va har bir do'stingiz uchun bonus $QLP to'plang!</p>
+        </div>
+        <div class="info-card">
             <div>
-                <div style="font-weight: bold;">Telegram Kanalga a'zo bo'lish</div>
-                <div style="color: var(--accent-green); font-size: 0.85rem;">+5,000 Balans</div>
+                <div style="font-weight: bold;">Taklif qilinganlar</div>
+                <div style="color: var(--crypto-green); font-size: 0.9rem;">0 Do'st</div>
             </div>
-            <button style="padding: 8px 15px; border-radius: 10px; border:none; background: var(--primary-orange); color:#fff; font-weight:bold;">Bajarish</button>
+            <button style="padding: 10px 16px; border-radius: 12px; border:none; background: var(--primary-orange); color:#fff; font-weight:bold;">Nusxalash</button>
         </div>
     </div>
 
-    <!-- TAB 3: DO'KON (Boosters) -->
-    <div id="page-shop" class="page">
-        <h2 style="margin-bottom: 15px;">Boosterlar va Kuchaytirish</h2>
-        <div class="card">
+    <!-- TAB 3: BOOST PAGE -->
+    <div id="page-boost" class="page">
+        <div style="padding: 20px;">
+            <h2>Boosterlar</h2>
+            <p style="color: var(--text-sub); font-size: 0.9rem; margin-top: 5px;">Mayning tezligini oshiring va har bir bosish qiymatini ko'paytiring.</p>
+        </div>
+        <div class="info-card">
             <div>
-                <div style="font-weight: bold;">Multitap (+1 Bosish)</div>
-                <div style="color: #ffaa00; font-size: 0.85rem;">Narxi: 1,000 Balans</div>
+                <div style="font-weight: bold;">Multitap Level 1</div>
+                <div style="color: var(--gold-glow); font-size: 0.85rem;">+0.001 $QLP per tap</div>
             </div>
-            <button style="padding: 8px 15px; border-radius: 10px; border:none; background: var(--accent-green); color:#000; font-weight:bold;">Sotib olish</button>
+            <button style="padding: 10px 16px; border-radius: 12px; border:none; background: var(--crypto-green); color:#000; font-weight:bold;">Oshirish</button>
         </div>
     </div>
 
-    <!-- TAB 4: XALTA (Inventory) -->
-    <div id="page-bag" class="page">
-        <h2 style="margin-bottom: 15px;">Sizning Inventaringiz</h2>
-        <p style="color: var(--text-dim);">Hozircha inventaringiz bo'sh.</p>
+    <!-- TAB 4: WALLET PAGE -->
+    <div id="page-wallet" class="page">
+        <div style="padding: 20px; text-align: center; margin-top: 20px;">
+            <i class="fa-solid fa-wallet" style="font-size: 3rem; color: var(--primary-orange); margin-bottom: 15px;"></i>
+            <h2>TON Wallet Connect</h2>
+            <p style="color: var(--text-sub); font-size: 0.9rem; margin-top: 8px;">Airdrop jarayonida tokenlarni hamyoningizga qabul qilish uchun TON hamyoningizni ulang.</p>
+            <button style="margin-top: 25px; width: 100%; padding: 14px; border-radius: 14px; border:none; background: #0088cc; color:#fff; font-size:1rem; font-weight:bold;">TON Hamyonni Ulash</button>
+        </div>
     </div>
 
-    <!-- Bottom Navigation Bar -->
-    <div class="navbar">
-        <div class="nav-item active" onclick="switchTab('miner', this)">
-            <i class="fa-solid fa-pickaxe"></i>
-            <span>Miner</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('pass', this)">
-            <i class="fa-solid fa-shield-halved"></i>
-            <span>Pass</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('shop', this)">
-            <i class="fa-solid fa-store"></i>
-            <span>Do'kon</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('bag', this)">
-            <i class="fa-solid fa-bag-shopping"></i>
-            <span>Xalta</span>
-        </div>
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+        <div class="nav-btn active" onclick="switchPage('mine', this)"><i class="fa-solid fa-pickaxe"></i><span>Mine</span></div>
+        <div class="nav-btn" onclick="switchPage('friends', this)"><i class="fa-solid fa-users"></i><span>Friends</span></div>
+        <div class="nav-btn" onclick="switchPage('boost', this)"><i class="fa-solid fa-rocket"></i><span>Boost</span></div>
+        <div class="nav-btn" onclick="switchPage('wallet', this)"><i class="fa-solid fa-wallet"></i><span>Wallet</span></div>
     </div>
 
     <script>
+        const socket = io();
         const tg = window.Telegram.WebApp;
         tg.expand();
 
         let userId = tg.initDataUnsafe?.user?.id || 123456;
         let username = tg.initDataUnsafe?.user?.first_name || "Player";
 
-        let balance = 0;
+        let balance = 0.0000;
         let energy = 1000;
         let maxEnergy = 1000;
-        let clickPower = 1;
+        let tapPower = 0.001;
         let unsyncedClicks = 0;
 
-        // API Init
+        // Backenddan ma'lumotlarni yuklash
         fetch('/api/init', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -354,53 +300,55 @@
             balance = data.balance;
             energy = data.energy;
             maxEnergy = data.max_energy;
-            clickPower = data.click_power;
+            tapPower = data.click_power;
             updateUI();
         });
 
-        const clickBtn = document.getElementById('clickBtn');
+        // Online taymer
+        socket.on('online_status', (data) => {
+            document.getElementById('onlineCounter').innerText = `${data.online_count} LIVE`;
+        });
 
-        clickBtn.addEventListener('touchstart', (e) => {
+        const tapBtn = document.getElementById('tapBtn');
+
+        tapBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
             for(let i=0; i<e.touches.length; i++) {
                 handleTap(e.touches[i].clientX, e.touches[i].clientY);
             }
         });
 
-        clickBtn.addEventListener('click', (e) => {
+        tapBtn.addEventListener('click', (e) => {
             handleTap(e.clientX, e.clientY);
         });
 
         function handleTap(x, y) {
-            if (energy >= clickPower) {
-                balance += clickPower;
-                energy -= clickPower;
+            if (energy >= 1) {
+                balance += tapPower;
+                energy -= 1;
                 unsyncedClicks += 1;
-
-                showFloatingNum(x, y, `+${clickPower}`);
                 updateUI();
+                spawnFloatText(x, y, `+${tapPower}`);
             }
         }
 
-        function showFloatingNum(x, y, text) {
+        function spawnFloatText(x, y, txt) {
             const el = document.createElement('div');
-            el.className = 'floating-num';
-            el.innerText = text;
+            el.className = 'float-token';
+            el.innerText = txt;
             el.style.left = `${x - 20}px`;
-            el.style.top = `${y - 40}px`;
+            el.style.top = `${y - 30}px`;
             document.body.appendChild(el);
-
             setTimeout(() => el.remove(), 800);
         }
 
         function updateUI() {
-            document.getElementById('balance').innerText = balance.toLocaleString();
+            document.getElementById('balance').innerText = balance.toFixed(4);
             document.getElementById('energyText').innerText = `${energy}/${maxEnergy}`;
-            document.getElementById('energyFill').style.width = `${(energy / maxEnergy) * 100}%`;
-            document.getElementById('clickPower').innerText = `+${clickPower}`;
+            document.getElementById('energyBar').style.width = `${(energy / maxEnergy) * 100}%`;
         }
 
-        // Har 2 sekundda backend bilan sinxronizatsiya
+        // Har 2 sekundda bosishlarni serverga sinxronizatsiya qilish
         setInterval(() => {
             if (unsyncedClicks > 0) {
                 fetch('/api/sync', {
@@ -413,12 +361,11 @@
         }, 2000);
 
         // Tablarni almashtirish
-        function switchTab(tabName, el) {
+        function switchPage(pageId, btn) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            
-            document.getElementById(`page-${tabName}`).classList.add('active');
-            el.classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`page-${pageId}`).classList.add('active');
+            btn.classList.add('active');
         }
     </script>
 </body>
